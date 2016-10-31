@@ -6,8 +6,8 @@ max_iter=10
 num_users=7374
 num_items=105113
 rank=20
-lda=1e-5
-lr=1e-7
+lda=1e-4
+lr=1e-1
 batch_size=20
 
 with tf.name_scope("input") as scope:
@@ -57,17 +57,17 @@ for i in range(max_iter):
     train_data = data[:split_point]
     val_data = data[split_point:]
     total_loss = 0
-    for j in range(len(data)/batch_size):
+    for j in range(len(train_data)/batch_size):
         U = np.array([u for u, _, _ in train_data[j*batch_size:(j+1)*batch_size]], dtype=np.int32)
         I = np.array([i for _, i, _ in train_data[j*batch_size:(j+1)*batch_size]], dtype=np.int32)
         R = np.array([r for _, _, r in train_data[j*batch_size:(j+1)*batch_size]], dtype=np.float32)
         with tf.device("/gpu:0"):
             loss,  _ = sess.run([cost, train_step], feed_dict={user_indices:U, item_indices:I, rating_values:R, mean_rating:3.0})
-            print loss
             total_loss += loss
-    print "avg train loss=%f" %(total_loss/(len(data)/batch_size))
+    print "avg_train_loss=%f" %(total_loss/(len(train_data)/batch_size))
     val_U = np.array([u for u, _, _ in val_data], dtype=np.int32)
     val_I = np.array([i for _, i, _ in val_data], dtype=np.int32)
     val_R = np.array([r for _, _, r in val_data], dtype=np.float32)
     with tf.device("/gpu:0"):
-        loss, _ = sess.run([rms], feed_dict={user_indices_val:val_U, item_indices_val:val_I, rating_values_val:val_R, mean_rating:3.0})
+        rms = sess.run([rms_val], feed_dict={user_indices_val:val_U, item_indices_val:val_I, rating_values_val:val_R, mean_rating:3.0})
+    print "val_rms=%f" %(rms[0])
